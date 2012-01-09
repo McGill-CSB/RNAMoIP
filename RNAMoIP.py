@@ -20,7 +20,7 @@ import os
 import sys
 import re
 
-NUMBER_THREADS = 8
+NUMBER_THREADS = 0
 
 def help():
     """
