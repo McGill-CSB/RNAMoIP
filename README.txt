@@ -71,7 +71,8 @@ RNAMoIP.py takes 5 arguments:
 		 D-32-37
 		 D-27-42
 
-	The rows starting with a "D" are the positions of the deleted base pairs.
+	The rows starting with a "D" are the positions of the deleted
+	 base pairs.
 	In this case [(8,13), (5,16), (32,37), (27,42)]. The resulting secondary
 	structure is thus:
 		((((.((......))...((((..((...((......))...))..))))...))))
