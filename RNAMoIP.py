@@ -228,8 +228,6 @@ def createMotifsDict(rna, pathDesc):
             if positions == None: #if we can't place the motif, we go to the next one
                 continue
             minLengthSequenceThree(positions, len(rna))#need len(rna) for border cases
-            if len(seq) == 3:
-                print motifDesc,  positions
             tmpDict = {motifDesc[0:-5] : positions}
             key = str(len(positions))
             if dict == {}:
@@ -629,9 +627,6 @@ def gurobi_create_model(motifs_dict, secStructPos, rna, K, pseudo):
 
     PRIMARY_BASES = [(u, v) for (u, v) in secStructPos]
     BASES = PRIMARY_BASES + [(u,v) for (u,v) in pseudo]
-    print PRIMARY_BASES
-    print
-    print BASES
 
     # WE CREATE OUR MODEL
     m = Model("toMinimize")
