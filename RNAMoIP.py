@@ -34,7 +34,7 @@ from __future__ import with_statement
         2- The rna secondary structure (no pseudoknots)
         3- the path to the .desc files
         4- the fraction of basepairs that can be removed (in (0, 1))
-        5- the max nb of components in motifs (Implemented for 3 and 4)
+        5- the max nb of components in motifs (Implemented for 4)
 
         
     It will output in sequence  thefirst optimal solution with the gurobi 
