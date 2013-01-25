@@ -17,16 +17,21 @@ INSTALLATION:
 	If you don't have a database of motifs in a ".desc" formatm, 
 	as outputed bu RNA3DMotifs (http://rna3dmotif.lri.fr/) we 
 	provided the one we used. Else jump to execution.
+
+    2) Download the motifs database from www.vreinharz.com/RNAMoIP/CATALOGUE.tgz
+    3) Extract the database i.e.
+            tar -xzf CATALOGUE.tgz
 	4) The folder No_Redondance_DESC contains the description files,
 		as .desc, of the motifs used by RNAMoIP
 	   The fold No_Redondance_VIEW3D contains, for each description
 		file, all motifs .pdb having the same sequence as 
 		described in the .desc.
 
+
+EXECUTION:
+
 	RNAMoIP.py is only a script that need to be launch with gurobi.sh.
-		 ii) The rna secondary structure (without pseudoknots, 
-			only use the characters: '(', ')', '.'
-RNAMoIP.py takes 5 arguments:
+    RNAMoIP.py takes 5 arguments:
                    i) The rna sequence
                   ii) The rna secondary structure (without pseudoknots,
                          only use the characters: '(', ')', '.'
@@ -37,7 +42,7 @@ RNAMoIP.py takes 5 arguments:
                          This must be a number between 0 and 1.
 			 We used "0.3".
                    v) The max number of components in the motif inserted.
-                         The implementation has been done up to '4'.
+                         The implementation has been done for '4'.
  
  EXAMPLE:
          If you have the sequence / secondary structure:
