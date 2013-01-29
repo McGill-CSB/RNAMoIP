@@ -220,49 +220,6 @@ def restrain_max_nb_components_in_motif_dict(dict, nb):
     tmpdict['max'] = real_max
     return tmpdict
 
-def leftCloseRightOpen(left, right, secStruct):
-    """Check if first entry to the left is closing ')' and 
-    first to the right open '('"""
-    lval = False
-    rval = False
-    left += 1
-    right -= 1
-    for i in reversed(range(left - 1)):
-        if secStruct[i] == ')':
-            lval = True
-            break
-        elif secStruct[i] == '(':
-            break
-    for i in range(right, len(secStruct)):
-        if secStruct[i] == '(':
-            rval = True
-            break
-        elif secStruct[i] == ')':
-            break
-    return all((lval, rval))
-
-def leftOpenRightClose(left, right, secStruct):
-    """Check if first entry to the left is closing ')' and 
-    first to the right open '('"""
-    left += 1
-    right -= 1
-    lval = False
-    rval = False
-    for i in reversed(range(left - 1)):
-        if secStruct[i] == '(':
-            lval = True
-            break
-        elif secStruct[i] == ')':
-            break
-    for i in range(right, len(secStruct)):
-        if secStruct[i] == ')':
-            rval = True
-            break
-        elif secStruct[i] == '(':
-            break
-    return all((lval, rval))
-
-
 def minLengthSequenceThree(position, lenRNA):
     """"
         We adjust the length of sequences to make sure at least of length 3
@@ -305,7 +262,6 @@ def minLengthSequenceThree(position, lenRNA):
                     else:
                         if (tmp[0], tmp[0] + 2) not in sequences: sequences.append((tmp[0], tmp[0] + 2))
                         if (tmp[0] - 1, tmp[0] + 1) not in sequences: sequences.append((tmp[0] - 1, tmp[0] + 1))
-
 
 def create_motifs_names_dict(motifs_dict):
     motifs_name_dict = {}
@@ -559,8 +515,6 @@ def contraint_cover_more_bp(model, cpts_dict, vars_dict, BASES, motifs_names_dic
                 if  len(coverage)-1  <= 2*len(bases_inside)+len(bases):
                     model.addConstr(LinExpr([1,1], [vars_dict['C-%s-%d-%d-1' % (mot, k,l)], vars_dict['C-%s-%d-%d-2' % (mot, m, n)]]), GRB.LESS_EQUAL, 1)
 
-
-
 def gurobi_create_model(motifs_dict, secStructPos, rna, max_bp_removal):
     """
         We create the sets that will be used in our model.
@@ -671,7 +625,6 @@ def gurobi_find_all_optimal_solutions(motifs_dict, sec_struct_pos, rna, max_bp_r
         """
     return m, model_list_of_dicts, list_sols, list_of_lin_expr
 
-
 def validate_rna_seq(rna_seq):
     rna_seq = rna_seq.strip().upper()
     if not all(x in 'ACGU' for x in rna_seq):
@@ -695,7 +648,7 @@ def validate_sec_struct(sec_struct,sec_struct_positions):
                 help(sec_struct=1)
                 sys.exit(1)
             sec_struct_positions.append(
-                (l,i))
+                (l+1,i+1))
     if left:
         help(sec_struct=1)
         sys.exit(1)
