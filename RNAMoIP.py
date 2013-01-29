@@ -24,7 +24,6 @@
 #(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS#
 #SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE                  #
 ###############################################################################
-
 from __future__ import with_statement
 '''
 @author: Vladimir Reinharz
@@ -49,59 +48,6 @@ import re
 
 NUMBER_THREADS = 0
 
-def help():
-    """
-        The basic help
-    """
-    print(""" To use this program you must enter the following 5 arguments:
-        1- The rna sequence
-        2- The rna secondary structure (no pseudoknots)
-        3- the path to the .desc files
-        4- the percentage of basepairs that can be removed
-        5- the max nb of components in motifs 
-    """)
-
-def isRNA(rna):
-    """
-        Check if all nucleotides are valid (i.e. in A,U,G,C)
-    """
-    for letter in rna:
-        if letter.upper() not in ['A', 'U', 'G', 'C']:
-            return False
-    return True
-
-def isWellBalanced(secStruct, positions):
-    """
-        Check if our structure is well balanced, fill position array
-    """
-    pseudoknots_positions = []
-    left = right = 0 #This is to keep track of the right, left parenthesis
-    while right < len(secStruct): #We must parse all the string
-        if secStruct[right] not in ['[', ']','(', '.', ')']: #we fail if we found a bad char, or outofbound
-            return False
-        if secStruct[right] == ')': #if we found closing parenthesis
-            left = right - 1 #we position the left just before
-            while secStruct[left] != '(' and left >= 0:
-                left -= 1
-            if left < 0:
-                return False
-            else:  #if we found matching good job, we remove them from our string
-                positions.append((left + 1, right + 1))
-                secStruct = secStruct[:left] + '.' + secStruct[left + 1:right] + '.' + secStruct[right + 1:]
-                right += 1 #and we search the next closing parenthesi
-        elif secStruct[right] == ']': #if we found closing parenthesis
-            left = right - 1 #we position the left just before
-            while secStruct[left] != '[' and left >= 0:
-                left -= 1
-            if left < 0:
-                return False
-            else:  #if we found matching good job, we remove them from our string
-                pseudoknots_positions.append((left + 1, right + 1))
-                secStruct = secStruct[:left] + '.' + secStruct[left + 1:right] + '.' + secStruct[right + 1:]
-                right += 1 #and we search the next closing parenthesi
-        else: #if we are not on a closing parenthesis, we go 1 to the right
-            right += 1
-    return True, pseudoknots_positions
 
 def getArrayMotSequence(pos_let):
     """
@@ -120,7 +66,7 @@ def getArrayMotSequence(pos_let):
         if int(pos_let[i][0]) == 0:
             return None
 
-        if int(pos_let[i][0]) - int(pos_let[i - 1][0]) > 3: #if the position does not follow, we start new sequence
+        if int(pos_let[i][0]) - int(pos_let[i - 1][0]) > 5: #if the position does not follow, we start new sequence
             sequence.append(pos_let[i][1])
         elif int(pos_let[i][0]) - int(pos_let[i - 1][0]) == 1:
             sequence[len(sequence) - 1] = sequence[len(sequence) - 1] + pos_let[i][1] #if the position follow, we are on same sequence
@@ -219,17 +165,6 @@ def getPositionsInsertion(motif, rna):
                 following = correctPositions(following, found + 1)
                 mergePositionsLists(position, following)
                 return position
-
-def only_canonical(rna, secStruct, secStructPos):
-    for (posa, posb) in secStructPos[:]:
-        a = rna[posa - 1]
-        b = rna[posb - 1]
-        if (a == b) or (a == 'A' and b == 'C') or (a == 'C' and b == 'A') or (a == 'G' and b == 'A') or (a == 'A' and b == 'G'):
-            secStructPos.remove((posa,posb))
-            print 'ERROR: NON CANONICAL LINKS in the secondary structure!!!'
-            print 'They were removed before processing.'
-            #sys.exit(256)
-    return secStruct
 
 def createMotifsDict(rna, pathDesc):
     """ This function takes as input an 'rna' secondary structure and the path to a folder
@@ -412,7 +347,7 @@ def make_cpts_weights_dict(cpts_dict, max_cpts):
                 weights_dict[x] = (weights_dict[x][0] + l - k + 1, i + 1)
     return weights_dict
 
-def constraint_objective(m, cpts_dict, BASES, vars_dict, max_cpts, rna_len):
+def constraint_objective(m, cpts_dict, BASES, vars_dict, max_cpts):
     """
             minimize min:N-2*sum{(i,j) in BASES}(1-D[i,j]) - (sum{(x,k,l,u) in SEQE}((l-k+1)*M[x,k,l,u]));
     """
@@ -440,7 +375,7 @@ def constraint_objective(m, cpts_dict, BASES, vars_dict, max_cpts, rna_len):
     return None
 
 def constraint_extremities_only_overlap(m, cpts_dict, vars_dict, max_cpts, BASES, rna_len):
-    for z in range(len(rna)):
+    for z in range(rna_len):
         arround = []
         over = []
         for i in range(max_cpts):
@@ -486,9 +421,9 @@ def constraint_motifs_entirely_inserted(m, cpts_dict,motifs_names_dict, vars_dic
             m.addConstr(LinExpr(weights, first + next_cpts), GRB.EQUAL, 0, "AllSeq-%s" % mot)
     return None
 
-def constraint_max_basepairs_removal(m, BASES, K, vars_dict):
+def constraint_max_basepairs_removal(m, BASES, max_bp_removal, vars_dict):
     bps = [vars_dict["D-%d-%d" % (i, j)] for (i, j) in BASES]
-    m.addConstr(LinExpr([1.0 for z in range(len(bps))], bps), GRB.LESS_EQUAL, len(BASES) * K, "max_nb_bp_removed")
+    m.addConstr(LinExpr([1.0 for z in range(len(bps))], bps), GRB.LESS_EQUAL, len(BASES) * max_bp_removal, "max_nb_bp_removed")
     return None
 
 def constraint_components_surrounded(m, cpts_dict, motifs_names_dict, vars_dict, BASES, max_cpts):
@@ -535,7 +470,7 @@ def constraint_interior_loops_arround_well_balanced(m, BASES, cpts_dict, vars_di
             m.addConstr(LinExpr([rna_len], [vars_dict["D-%d-%d" % (u,v)]]), GRB.GREATER_EQUAL, LinExpr(weights, first + second), "2_cpts_consistend_left-%d-%d" % (u,v))
     return None
 
-def contraint_3_way_test(m, cpts_dict, vars_dict, BASES, motifs_names_dict, rna_len, PRIMARY_BASES):
+def contraint_3_way_test(m, cpts_dict, vars_dict, BASES, motifs_names_dict, rna_len):
     #Make sure all compts are close by the same "branch"
     for (k,l) in BASES:
         #For interior_loops, if it ends, it must start inside to, so we must go through the motifs
@@ -578,21 +513,6 @@ def contraint_3_way_test(m, cpts_dict, vars_dict, BASES, motifs_names_dict, rna_
         tot_part.extend(fourth_part)
         m.addConstr(LinExpr(coeffs, tot_part), GRB.LESS_EQUAL, LinExpr( [rna_len] ,[vars_dict["D-%d-%d" % (k,l)]]), "+4_way_between_D-%d-%d" % (k,l))
         m.addConstr(LinExpr(coeffs, tot_part), GRB.GREATER_EQUAL, LinExpr( [-rna_len] ,[vars_dict["D-%d-%d" % (k,l)]]), "-4_way_between_D-%d-%d" % (k,l))
-    """
-    for (k,l) in list(set(BASES) - set(PRIMARY_BASES)):
-        first_part =  [vars_dict["C-%s-%d-%d-1" % (x,i,j)] for (x,i,j) in cpts_dict['CPTS1Of4'] if k < i and j < l] 
-        second_part = [vars_dict["C-%s-%d-%d-2" % (x,i,j)] for (x,i,j) in cpts_dict['CPTS2Of4'] if k < i and j < l] 
-        third_part =  [vars_dict["C-%s-%d-%d-3" % (x,i,j)] for (x,i,j) in cpts_dict['CPTS3Of4'] if k < i and j < l] 
-        fourth_part = [vars_dict["C-%s-%d-%d-4" % (x,i,j)] for (x,i,j) in cpts_dict['CPTS4Of4'] if k < i and j < l] 
-        coeffs = [1.0 for x in range(len(first_part) + len(second_part) + len(third_part) + len(fourth_part))]
-        tot_part = []
-        tot_part.extend(first_part)
-        tot_part.extend(second_part)
-        tot_part.extend(third_part)
-        tot_part.extend(fourth_part)
-        m.addConstr(LinExpr(coeffs, tot_part), GRB.EQUAL, 0, "+4_pseudo_no_inside_between_D-%d-%d" % (k,l))
-    """
-
 
 def constraint_no_lonely_bp(m, vars_dict, BASES, rna_len):
     #First border cases
@@ -641,19 +561,20 @@ def contraint_cover_more_bp(model, cpts_dict, vars_dict, BASES, motifs_names_dic
 
 
 
-def gurobi_create_model(motifs_dict, secStructPos, rna, K, pseudo):
+def gurobi_create_model(motifs_dict, secStructPos, rna, max_bp_removal):
     """
         We create the sets that will be used in our model.
         return m, [vars_dict, cpts_dict, motifs_names_dict, BASES]
     """
+    rna_len = len(rna)
+
     max_cpts = motifs_dict['max']
 
     motifs_names_dict = create_motifs_names_dict(motifs_dict)
 
     cpts_dict = create_components_dict(motifs_dict, motifs_names_dict)
 
-    PRIMARY_BASES = [(u, v) for (u, v) in secStructPos]
-    BASES = PRIMARY_BASES + [(u,v) for (u,v) in pseudo]
+    BASES = [(u, v) for (u, v) in secStructPos]
 
     # WE CREATE OUR MODEL
     m = Model("toMinimize")
@@ -668,42 +589,42 @@ def gurobi_create_model(motifs_dict, secStructPos, rna, K, pseudo):
 
     m.update()
 
-    constraint_objective(m, cpts_dict, BASES, vars_dict, max_cpts, len(rna))
+    constraint_objective(m, cpts_dict, BASES, vars_dict, max_cpts)
     contraint_cover_more_bp(m, cpts_dict, vars_dict, BASES, motifs_names_dict)
 
     """===========================
             CONSTRAINTS
     ==========================="""
-    constraint_no_lonely_bp(m, vars_dict, BASES, len(rna))
-    constraint_extremities_only_overlap(m, cpts_dict, vars_dict, max_cpts,BASES, len(rna))
+    constraint_no_lonely_bp(m, vars_dict, BASES, rna_len)
+    constraint_extremities_only_overlap(m, cpts_dict, vars_dict, max_cpts,BASES, rna_len)
 
     constraint_component_followed(m, cpts_dict, vars_dict, max_cpts)
     constraint_component_preceded(m, cpts_dict, vars_dict, max_cpts)
 
     constraint_motifs_entirely_inserted(m, cpts_dict,motifs_names_dict, vars_dict, max_cpts)
 
-    constraint_max_basepairs_removal(m, BASES, K, vars_dict)
+    constraint_max_basepairs_removal(m, BASES, max_bp_removal, vars_dict)
 
     constraint_components_surrounded(m, cpts_dict, motifs_names_dict, vars_dict, BASES, max_cpts)
 
     constraint_most_one_motif_more_3_cpts(m, cpts_dict, vars_dict, max_cpts)
 
-    constraint_interior_loops_arround_well_balanced(m, BASES, cpts_dict, vars_dict, motifs_names_dict, len(rna))
+    constraint_interior_loops_arround_well_balanced(m, BASES, cpts_dict, vars_dict, motifs_names_dict, rna_len)
 
-    contraint_3_way_test(m, cpts_dict, vars_dict, BASES, motifs_names_dict, len(rna), PRIMARY_BASES)
+    contraint_3_way_test(m, cpts_dict, vars_dict, BASES, motifs_names_dict, rna_len)
 
     m.update()
     return m, [vars_dict, cpts_dict, motifs_names_dict, BASES]
 
-def gurobi_find_all_optimal_solutions(motifs_dict, sec_struct_pos, rna, K, pseudo):
-    """Solve for all optimal solutions given a motifs_dict, sec_struct_pos, rna, K
+def gurobi_find_all_optimal_solutions(motifs_dict, sec_struct_pos, rna, max_bp_removal):
+    """Solve for all optimal solutions given a motifs_dict, sec_struct_pos, rna, max_bp_removal
         will output a tuple with elements:
             1: a list of of list if the different "C-%s-%d-%d-%d" == 1 in each solutions
             2: the gurobi model after all solutions where generated (see item 4)
             3: the list model_dict generate for the given problem gurobi_create_model
             4: the list of lin_expr added to the model to generate all optimal solutions
     """
-    m, model_list_of_dicts = gurobi_create_model(motifs_dict, sec_struct_pos, rna, K, pseudo)
+    m, model_list_of_dicts = gurobi_create_model(motifs_dict, sec_struct_pos, rna, max_bp_removal)
     list_sols = []
     list_of_lin_expr = []
     m.setParam("Threads",NUMBER_THREADS)
@@ -751,46 +672,120 @@ def gurobi_find_all_optimal_solutions(motifs_dict, sec_struct_pos, rna, K, pseud
     return m, model_list_of_dicts, list_sols, list_of_lin_expr
 
 
-if __name__ == '__main__':
-    """
-        Check if enough arguments (i.e.: rna, sec_struct, path, K, max_nb_cpts_in_mot)
-    """
-    if len(sys.argv) < 6:
-        help()
-        sys.exit()
-    """=======================================================================================
-        Make sure every argument is in a good format (rna, secStruct, path, K )
-    ======================================================================================="""
-    rna = sys.argv[1].upper()
-    secStruct = sys.argv[2]
-    secStructPos = [] #Array with positions of secondary structured, is filled with first check isWellBalanced
-    pathDesc = sys.argv[3]
-    #make sure the last args is a float and before last an int
-    try:
-        K = float(sys.argv[4])
-        max_cpts = int(sys.argv[5])
-    except:
-        help()
-        sys.exit()
+def validate_rna_seq(rna_seq):
+    rna_seq = rna_seq.strip().upper()
+    if not all(x in 'ACGU' for x in rna_seq):
+        help(rna_seq)
+        sys.exit(1)
+    return rna_seq
 
-    test_sec_struct, pseudo = isWellBalanced(secStruct, secStructPos)
-    if (len(secStruct) != len(rna) or #the rna sequence and sec struct must have same length
-        isRNA(rna) != True or #make sur the Rna sequence is only AUGC
-        test_sec_struct != True or #make sure secondary structure is well balanced and only (.)
-        not (0 <= K <= 1) #make sure our coefficient is between 0 and 1
-        ):
-        help()
-        sys.exit()
+def validate_sec_struct(sec_struct,sec_struct_positions):
+    sec_struct = sec_struct.strip()
+    if not all(x in '(.)' for x in sec_struct):
+        help(sec_struct=1)
+        sys.exit(1)
+    left = []
+    for i,pos in enumerate(sec_struct):
+        if pos == '(':
+            left.append(i)
+        elif pos == ')':
+            try:
+                l = left.pop()
+            except IndexError:
+                help(sec_struct=1)
+                sys.exit(1)
+            sec_struct_positions.append(
+                (l,i))
+    if left:
+        help(sec_struct=1)
+        sys.exit(1)
+    return sec_struct
+
+def validate_max_bp_removal(max_bp_removal):
+    max_bp_removal = float(max_bp_removal.strip())
+    if not 0 <= max_bp_removal <= 1.0:
+        help(max_bp_removal=1)
+        sys.exit(1)
         
+    return max_bp_removal
+
+def validate_max_components(max_components):
+    max_components = int(max_components.strip())
+    if max_components < 1:
+        help(max_components=1)
+        sys.exit(1)
+    return max_components
+
+def help(rna_seq='',
+         sec_struct='',
+         max_bp_removal='',
+         max_components='',
+         required_arg=''):
+    if rna_seq:
+        print 'The RNA sequence should only contain the characters "ACGU"\n'
+    if sec_struct:
+        print """The secondary structure should only contain the characters "(.)"
+            and be a well balanced parenthese equation\n"""
+    if max_bp_removal:
+        print "The max number of base pairs should be between 0 and 1\n"
+    if max_components:
+        print "The number of components should be greater than 3\n"
+    if required_arg:
+        print "A required argument is missing\n"
+
+
+    print """ RNAMoIP v1.1
+        ARGUMENTS 
+          REQUIRED:
+            -s The rna Sequence 
+            -ss The rna Secondary Structure (no pseudoknots) 
+            -d the path to the .Desc files
+          OPTIONAL
+            -r (default 0.3) 
+               the percentage of basepairs that can be Removed 
+            -c (default 4)
+                the max nb of Components in motifs 
+    """
+
+if __name__ == '__main__':
+    rna_seq = ''
+    sec_struct = ''
+    sec_struct_positions = [] 
+    path_desc = ''
+    max_bp_removal = 0.3
+    max_components = 4
+
+    opts = sys.argv
+    for i,option in enumerate(opts):
+        if option == '-s':
+            rna_seq = validate_rna_seq(opts[i+1])
+        elif option == '-ss':
+            sec_struct = validate_sec_struct(opts[i+1],sec_struct_positions)
+        elif option == '-d':
+            path_desc = opts[i+1]
+        elif option == '-r':
+            max_bp_removal = validate_max_bp_removal(opts[i+1])
+        elif option == '-c':
+            max_components = validate_max_components(opts[i+1])
+        elif option in ('-h','-help'):
+            print help()
+            sys.exit(0)
+    if not all((rna_seq,
+                sec_struct,
+                path_desc)):
+        help(required_arg=1)
+        sys.exit(1)
 
     """=============================================================================================
         Rna and secStruct seems ok. We create dictionary of motifs that can be inserted
         Special key: 'max' hold as value the biggest number of sequences that a motif can have
     ============================================================================================="""
-    only_canonical(rna, secStruct, secStructPos)
-    motifs_dict = createMotifsDict(rna, pathDesc)
-    motifs_dict = restrain_max_nb_components_in_motif_dict(motifs_dict, max_cpts)
-    m, model_list_of_dicts, list_sols, list_of_lin_expr =  gurobi_find_all_optimal_solutions(motifs_dict, secStructPos, rna, K, pseudo)
+    motifs_dict = createMotifsDict(rna_seq, path_desc)
+    motifs_dict = restrain_max_nb_components_in_motif_dict(motifs_dict, max_components)
+    m, model_list_of_dicts, list_sols, list_of_lin_expr =  gurobi_find_all_optimal_solutions(motifs_dict,
+                                                                                             sec_struct_positions,
+                                                                                             rna_seq,
+                                                                                             max_bp_removal)
     for i in range(len(list_sols)):
         print
         print 'Optimal solution nb: ',i + 1
