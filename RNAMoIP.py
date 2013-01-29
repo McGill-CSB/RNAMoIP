@@ -614,27 +614,37 @@ def validate_rna_seq(rna_seq):
         sys.exit(1)
     return rna_seq
 
-def validate_sec_struct(sec_struct,sec_struct_positions):
-    sec_struct = sec_struct.strip()
-    if not all(x in '(.)' for x in sec_struct):
-        help(sec_struct=1)
-        sys.exit(1)
-    left = []
-    for i,pos in enumerate(sec_struct):
-        if pos == '(':
-            left.append(i)
-        elif pos == ')':
-            try:
-                l = left.pop()
-            except IndexError:
-                help(sec_struct=1)
-                sys.exit(1)
-            sec_struct_positions.append(
-                (l+1,i+1))
-    if left:
-        help(sec_struct=1)
-        sys.exit(1)
-    return sec_struct
+def validate_sec_struct(sec_struct_info):
+    l_struct_positions = []
+
+    if os.path.isfile(sec_struct_info):
+        l_sec_struct = [x.strip() for x in open(sec_struct_info)
+                        if x]
+    else:
+        l_sec_struct = [sec_struct_info.strip()]
+
+    for sec_struct in l_sec_struct:
+        sec_struct_positions = []
+        if not all(x in '(.)' for x in sec_struct):
+            help(sec_struct=1)
+            sys.exit(1)
+        left = []
+        for i,pos in enumerate(sec_struct):
+            if pos == '(':
+                left.append(i)
+            elif pos == ')':
+                try:
+                    l = left.pop()
+                except IndexError:
+                    help(sec_struct=1)
+                    sys.exit(1)
+                sec_struct_positions.append(
+                    (l+1,i+1))
+        if left:
+            help(sec_struct=1)
+            sys.exit(1)
+        l_struct_positions.append((sec_struct,sec_struct_positions))
+    return l_struct_positions
 
 def validate_max_bp_removal(max_bp_removal):
     max_bp_removal = float(max_bp_removal.strip())
@@ -657,6 +667,15 @@ def validate_max_nb_sols(max_nb_sols):
         help(max_nb_sols=1)
         sys.exit(1)
     return max_nb_sols
+
+def remove_deleted(sec_struct,list_sols):
+    ss = list(sec_struct)
+    for x in list_sols:
+        x = x.split('-')
+        if x[0] == 'D':
+            ss[int(x[1])-1] = '.'
+            ss[int(x[2])-1] = '.'
+    return ''.join(ss)
 
 def help(rna_seq='',
          sec_struct='',
@@ -697,8 +716,7 @@ def help(rna_seq='',
 
 if __name__ == '__main__':
     rna_seq = ''
-    sec_struct = ''
-    sec_struct_positions = [] 
+    l_sec_struct_positions = []
     path_desc = ''
     max_nb_sols = 1
     max_bp_removal = 0.3
@@ -709,7 +727,7 @@ if __name__ == '__main__':
         if option == '-s':
             rna_seq = validate_rna_seq(opts[i+1])
         elif option == '-ss':
-            sec_struct = validate_sec_struct(opts[i+1],sec_struct_positions)
+            l_sec_struct_positions = validate_sec_struct(opts[i+1])
         elif option == '-d':
             path_desc = opts[i+1]
         elif option == '-r':
@@ -722,30 +740,39 @@ if __name__ == '__main__':
             print help()
             sys.exit(0)
     if not all((rna_seq,
-                sec_struct,
+                l_sec_struct_positions,
                 path_desc)):
         help(required_arg=1)
         sys.exit(1)
 
     """=============================================================================================
-        Rna and secStruct seems ok. We create dictionary of motifs that can be inserted
-        Special key: 'max' hold as value the biggest number of sequences that a motif can have
+    Generate models and sols
     ============================================================================================="""
     motifs_dict = createMotifsDict(rna_seq, path_desc)
     motifs_dict = restrain_max_nb_components_in_motif_dict(motifs_dict, max_components)
-    m, model_list_of_dicts, list_sols, list_of_lin_expr, min_val =  gurobi_find_all_optimal_solutions(motifs_dict,
+
+    all_sols = []
+    for sec_struct,sec_struct_positions in l_sec_struct_positions:
+        m, model_list_of_dicts, list_sols, list_of_lin_expr, min_val =  gurobi_find_all_optimal_solutions(motifs_dict,
                                                                                              sec_struct_positions,
                                                                                              rna_seq,
                                                                                              max_bp_removal,
                                                                                              max_nb_sols)
-    for i in range(len(list_sols)):
-        print
-        print 'Optimal solution nb: ',i + 1
-        for name in list_sols[i]:
-            print '\t', name
+        all_sols.append((list_sols, min_val,sec_struct))
+    all_sols = sorted(all_sols,key=lambda x:x[1])
+    min_val = all_sols[0][1]
+
+    for list_sols,val,sec_struct in all_sols:
+        if val > min_val:
+            break
+        print "Solution for the secondary structure:"
+        print "\t%s" %  sec_struct
+        for i in range(len(list_sols)):
+            print
+            print 'Optimal solution nb: ',i + 1
+            print 'Corrected secondary structure:'
+            print "\t%s" % remove_deleted(sec_struct,list_sols[i])
+            for name in list_sols[i]:
+                print '\t', name
 
     print "\nThe optimal solutions has as value:\n\t%s" % min_val,
-
-
-
-
