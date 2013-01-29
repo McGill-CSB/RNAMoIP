@@ -52,9 +52,8 @@ EXECUTION:
 	the base pairs to be removed. You need the complete path to your
 	motifs folder (if you downloaded the one we provide, it is:
 		"No_Redondance_DESC"
-		"/path/to/motifs/database/No_Redondance_DESC" \
 	You should in a terminal do as follows:
-		gurobi.sh RNAMoIP.py 'GGGCGGCCUUCGGGCUAGACGGUGGGAGAGGCUUCGGCUGGUCCACCCGUGACGCUC' '((((((((....))))..((((..(((..(((....)))..)))..))))...))))' '/data/pkgs/gurobi/vreinh/MERGED_CATALOGUE/No_Redondance_DESC' 0.3 4 > my_output.txt
+		gurobi.sh RNAMoIP.py 'GGGCGGCCUUCGGGCUAGACGGUGGGAGAGGCUUCGGCUGGUCCACCCGUGACGCUC' '((((((((....))))..((((..(((..(((....)))..)))..))))...))))' 'No_Redondance_DESC' 0.3 4 > my_output.txt
 
 	The file my_output.txt will contain all the usual output 
 	of Gurobi. The line starting with "Best objective" 

@@ -120,7 +120,7 @@ def getArrayMotSequence(pos_let):
         if int(pos_let[i][0]) == 0:
             return None
 
-        if int(pos_let[i][0]) - int(pos_let[i - 1][0]) > 5: #if the position does not follow, we start new sequence
+        if int(pos_let[i][0]) - int(pos_let[i - 1][0]) > 3: #if the position does not follow, we start new sequence
             sequence.append(pos_let[i][1])
         elif int(pos_let[i][0]) - int(pos_let[i - 1][0]) == 1:
             sequence[len(sequence) - 1] = sequence[len(sequence) - 1] + pos_let[i][1] #if the position follow, we are on same sequence
@@ -249,7 +249,7 @@ def createMotifsDict(rna, pathDesc):
             seq = getArrayMotSequence(f.readline()) #Now we retrieve the array with the sequences in an ordered array
             if seq == None: #if there is an error in the sequence, we skip it AND RECORD IT
                 with open("logBadDesc.txt" , "a") as f:
-                    f.write(motifDesc)
+                    f.write('%s\n' % motifDesc)
                 continue
             positions = getPositionsInsertion(seq, rna)
             if positions == None: #if we can't place the motif, we go to the next one
