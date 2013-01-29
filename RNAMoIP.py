@@ -570,7 +570,7 @@ def gurobi_create_model(motifs_dict, secStructPos, rna, max_bp_removal):
     m.update()
     return m, [vars_dict, cpts_dict, motifs_names_dict, BASES]
 
-def gurobi_find_all_optimal_solutions(motifs_dict, sec_struct_pos, rna, max_bp_removal):
+def gurobi_find_all_optimal_solutions(motifs_dict, sec_struct_pos, rna, max_bp_removal,max_nb_sols):
     """Solve for all optimal solutions given a motifs_dict, sec_struct_pos, rna, max_bp_removal
         will output a tuple with elements:
             1: a list of of list if the different "C-%s-%d-%d-%d" == 1 in each solutions
@@ -578,52 +578,54 @@ def gurobi_find_all_optimal_solutions(motifs_dict, sec_struct_pos, rna, max_bp_r
             3: the list model_dict generate for the given problem gurobi_create_model
             4: the list of lin_expr added to the model to generate all optimal solutions
     """
-    m, model_list_of_dicts = gurobi_create_model(motifs_dict, sec_struct_pos, rna, max_bp_removal)
+    nb_sols = 1 
     list_sols = []
     list_of_lin_expr = []
+
+    m, model_list_of_dicts = gurobi_create_model(motifs_dict, sec_struct_pos, rna, max_bp_removal)
     m.setParam("Threads",NUMBER_THREADS)
     m.setParam("MIPFocus",3)
     m.setParam("MIPGap", 0)
     m.setParam("Method", 3)
     m.update()
     m.optimize()
+
     if m.Status != GRB.Status.OPTIMAL:
             print '-------------------------'
             print ' NO SOLUTIONS!'
-    else:
-        #minVal = round(m.ObjVal)
-        #nb_sols = 1 #To escape after 50sols
-        #while True:  #we loop for all optimal solutions
+            sys.exit(0)
+
+    min_val = m.ObjVal
+    while True:  #we loop for all optimal solutions
+        nb_sols += 1
         in_sol = []
         not_in_sol = []
         list_sols.append([])
+
         for x in m.getVars():
             if round(x.X)  == 1:
+                in_sol.append(x)
                 list_sols[-1].append(x.VarName)
-        m.printAttr('X')
-        print '-------------------------'
-        """
-            for x in m.getVars():
-                if round(x.X)  == 1:
-                    in_sol.append(x)
-                    list_sols[-1].append(x.VarName)
-                else:
-                    not_in_sol.append(x)
-            weights = [-1.0 for z in range(len(in_sol))]
-            weights.extend([1.0 for z in range(len(not_in_sol))])
-            tot_sols = in_sol + not_in_sol
-            lin_expr = LinExpr(weights, tot_sols)
-            list_of_lin_expr.append(lin_expr)
-            m.addConstr(lin_expr, GRB.GREATER_EQUAL, -len(in_sol) + 1)
-            m.update()
-            m.optimize()
-            nb_sols += 1
-            if round(m.ObjVal) > minVal + 0.5  or not m.ObjVal or nb_sols > 25:
-                print '-------------------------'
-                print ' EXCEEDED 25 SOLS or FOUND ALL SOLS or NO SOLS!'
-                break
-        """
-    return m, model_list_of_dicts, list_sols, list_of_lin_expr
+            else:
+                not_in_sol.append(x)
+
+        if nb_sols > max_nb_sols:
+            break
+
+        weights = [-1.0 for z in range(len(in_sol))]
+        weights.extend([1.0 for z in range(len(not_in_sol))])
+        tot_sols = in_sol + not_in_sol
+        lin_expr = LinExpr(weights, tot_sols)
+        list_of_lin_expr.append(lin_expr)
+        m.addConstr(lin_expr, GRB.GREATER_EQUAL, -len(in_sol) + 1)
+        m.update()
+        print '\n#########################\n'
+        m.optimize()
+        if not m.Objval or m.ObjVal > min_val + 0.5:
+            print "\nAll Optimal Solutions have been found\nNext best score: %s\n" % m.Objval 
+            break
+
+    return m, model_list_of_dicts, list_sols, list_of_lin_expr, min_val
 
 def validate_rna_seq(rna_seq):
     rna_seq = rna_seq.strip().upper()
@@ -669,11 +671,19 @@ def validate_max_components(max_components):
         sys.exit(1)
     return max_components
 
+def validate_max_nb_sols(max_nb_sols):
+    max_nb_sols = int(max_nb_sols.strip())
+    if max_nb_sols < 1:
+        help(max_nb_sols=1)
+        sys.exit(1)
+    return max_nb_sols
+
 def help(rna_seq='',
          sec_struct='',
          max_bp_removal='',
          max_components='',
-         required_arg=''):
+         required_arg='',
+         max_nb_sols=''):
     if rna_seq:
         print 'The RNA sequence should only contain the characters "ACGU"\n'
     if sec_struct:
@@ -685,7 +695,8 @@ def help(rna_seq='',
         print "The number of components should be greater than 3\n"
     if required_arg:
         print "A required argument is missing\n"
-
+    if max_nb_sols:
+        print "The maximal number of solutions should be bigger than 0\n"
 
     print """ RNAMoIP v1.1
         ARGUMENTS 
@@ -698,6 +709,8 @@ def help(rna_seq='',
                the percentage of basepairs that can be Removed 
             -c (default 4)
                 the max nb of Components in motifs 
+            -m_sols (default 1)
+                maximal number of optimal solutions to output
     """
 
 if __name__ == '__main__':
@@ -705,6 +718,7 @@ if __name__ == '__main__':
     sec_struct = ''
     sec_struct_positions = [] 
     path_desc = ''
+    max_nb_sols = 1
     max_bp_removal = 0.3
     max_components = 4
 
@@ -720,6 +734,8 @@ if __name__ == '__main__':
             max_bp_removal = validate_max_bp_removal(opts[i+1])
         elif option == '-c':
             max_components = validate_max_components(opts[i+1])
+        elif option == '-m_sols':
+            max_nb_sols = validate_max_nb_sols(opts[i+1])
         elif option in ('-h','-help'):
             print help()
             sys.exit(0)
@@ -735,16 +751,18 @@ if __name__ == '__main__':
     ============================================================================================="""
     motifs_dict = createMotifsDict(rna_seq, path_desc)
     motifs_dict = restrain_max_nb_components_in_motif_dict(motifs_dict, max_components)
-    m, model_list_of_dicts, list_sols, list_of_lin_expr =  gurobi_find_all_optimal_solutions(motifs_dict,
+    m, model_list_of_dicts, list_sols, list_of_lin_expr, min_val =  gurobi_find_all_optimal_solutions(motifs_dict,
                                                                                              sec_struct_positions,
                                                                                              rna_seq,
-                                                                                             max_bp_removal)
+                                                                                             max_bp_removal,
+                                                                                             max_nb_sols)
     for i in range(len(list_sols)):
         print
         print 'Optimal solution nb: ',i + 1
         for name in list_sols[i]:
             print '\t', name
 
+    print "\nThe optimal solutions has as value:\n\t%s" % min_val,
 
 
 
