@@ -35,8 +35,7 @@ from __future__ import with_statement
         4- the fraction of basepairs that can be removed (in (0, 1))
         5- the max nb of components in motifs (Implemented for 4)
 
-        
-    It will output in sequence  thefirst optimal solution with the gurobi 
+    It will output in sequence the first optimal solutions with the gurobi 
         general output.
     
 '''
@@ -314,15 +313,6 @@ def constraint_objective(m, cpts_dict, BASES, vars_dict, max_cpts):
         cpts.append(vars_dict["C-%s-%d-%d-1" % (x,k,l)])
         weights.append(-(weights_dict[x][0] ** 2))
 
-    """
-    for i in range(max_cpts):
-        for (x,k,l) in cpts_dict['CPTS%d' % (i+1)]:
-            cpts.append(vars_dict["C-%s-%d-%d-%d" % (x,k,l,i+1)]) 
-            if (x,k,l) in cpts_dict['CPTS1']:
-                weights.append(-(l - k + 1.0))
-            else:
-                weights.append(-(l - k + 1.0))
-    """
     for (u, v) in BASES:
         cpts.append(vars_dict["D-%d-%d" % (u, v)])
         weights.append(10.0)
@@ -364,7 +354,6 @@ def constraint_component_preceded(m, cpts_dict, vars_dict, max_cpts):
                 m.addConstr(vars_dict["C-%s-%d-%d-%d" % (x,k,l,j+2)], GRB.LESS_EQUAL, LinExpr([1.0 for z in range(len(prev_cpts))], prev_cpts),
                     "Preceded%dOf%d-%s-%d-%d" % (j+2, i+1, x, k, l))
     return None
-
 
 def constraint_motifs_entirely_inserted(m, cpts_dict,motifs_names_dict, vars_dict, max_cpts):
     for i in range(1, max_cpts):
@@ -426,22 +415,9 @@ def constraint_interior_loops_arround_well_balanced(m, BASES, cpts_dict, vars_di
             m.addConstr(LinExpr([rna_len], [vars_dict["D-%d-%d" % (u,v)]]), GRB.GREATER_EQUAL, LinExpr(weights, first + second), "2_cpts_consistend_left-%d-%d" % (u,v))
     return None
 
-def contraint_3_way_test(m, cpts_dict, vars_dict, BASES, motifs_names_dict, rna_len):
+def constraint_3_way(m, cpts_dict, vars_dict, BASES, motifs_names_dict, rna_len):
     #Make sure all compts are close by the same "branch"
     for (k,l) in BASES:
-        #For interior_loops, if it ends, it must start inside to, so we must go through the motifs
-        """
-        for x in motifs_names_dict['MOTIFS2']:
-            first_int_loop = [vars_dict["C-%s-%d-%d-1" % (x2,i,j)] for (x2,i,j) in cpts_dict['CPTS1Of2']
-                if x2 == x and k < i  and j < l]
-            second_int_loop = [vars_dict["C-%s-%d-%d-2" % (x2,i,j)] for (x2,i,j) in cpts_dict['CPTS2Of2']
-                if x2 == x and k < i  and j < l]
-            weigths = [-1.0 for z in range(len(first_int_loop))] + [1.0 for z in range(len(second_int_loop))]
-            m.addConstr(LinExpr(weigths, first_int_loop + second_int_loop), GRB.LESS_EQUAL, LinExpr(
-                [rna_len], [vars_dict['D-%d-%d' % (k,l)]]), "int_loop_inside_less%d-%d" %(k,l))
-            m.addConstr(LinExpr(weigths, first_int_loop + second_int_loop), GRB.GREATER_EQUAL, LinExpr(
-                [-rna_len], [vars_dict['D-%d-%d' % (k,l)]]), "int_loop_inside_great%d-%d" %(k,l))
-        """
         #Three way junctions constraints, must "inside" the same BPs
         first_part =  [vars_dict["C-%s-%d-%d-1" % (x,i,j)] for (x,i,j) in cpts_dict['CPTS1Of3'] if i >= k and j <= l] 
         second_part = [vars_dict["C-%s-%d-%d-2" % (x,i,j)] for (x,i,j) in cpts_dict['CPTS2Of3'] if i >= k and j <= l] 
@@ -455,6 +431,7 @@ def contraint_3_way_test(m, cpts_dict, vars_dict, BASES, motifs_names_dict, rna_
         m.addConstr(LinExpr(coeffs, tot_part), GRB.LESS_EQUAL, LinExpr( [rna_len] ,[vars_dict["D-%d-%d" % (k,l)]]), "+3_way_between_D-%d-%d" % (k,l))
         m.addConstr(LinExpr(coeffs, tot_part), GRB.GREATER_EQUAL, LinExpr( [-rna_len] ,[vars_dict["D-%d-%d" % (k,l)]]), "-3_way_between_D-%d-%d" % (k,l))
 
+def constraint_4_way(m, cpts_dict, vars_dict, BASES, motifs_names_dict, rna_len):
     for (k,l) in BASES:
         first_part =  [vars_dict["C-%s-%d-%d-1" % (x,i,j)] for (x,i,j) in cpts_dict['CPTS1Of4'] if i >= k and j <= l] 
         second_part = [vars_dict["C-%s-%d-%d-2" % (x,i,j)] for (x,i,j) in cpts_dict['CPTS2Of4'] if i >= k and j <= l] 
@@ -505,7 +482,7 @@ def constraint_no_lonely_bp(m, vars_dict, BASES, rna_len):
             lin_expr.addConstant(len(before_after) + 1)
         m.addConstr(1, GRB.LESS_EQUAL, lin_expr, "stack_bp_%d" % i)
 
-def contraint_cover_more_bp(model, cpts_dict, vars_dict, BASES, motifs_names_dict ):
+def constraint_cover_more_bp(model, cpts_dict, vars_dict, BASES, motifs_names_dict ):
     for mot in motifs_names_dict['MOTIFS2']:
         for (x,k,l) in ( (x2,k2,l2) for (x2,k2,l2) in cpts_dict['CPTS1Of2'] if x2 == mot):
             for (y,m,n) in ( (x2,k2,l2) for (x2,k2,l2) in cpts_dict['CPTS2Of2'] if x2 == mot and k2 > l + 3):
@@ -544,7 +521,7 @@ def gurobi_create_model(motifs_dict, secStructPos, rna, max_bp_removal):
     m.update()
 
     constraint_objective(m, cpts_dict, BASES, vars_dict, max_cpts)
-    contraint_cover_more_bp(m, cpts_dict, vars_dict, BASES, motifs_names_dict)
+    constraint_cover_more_bp(m, cpts_dict, vars_dict, BASES, motifs_names_dict)
 
     """===========================
             CONSTRAINTS
@@ -565,7 +542,10 @@ def gurobi_create_model(motifs_dict, secStructPos, rna, max_bp_removal):
 
     constraint_interior_loops_arround_well_balanced(m, BASES, cpts_dict, vars_dict, motifs_names_dict, rna_len)
 
-    contraint_3_way_test(m, cpts_dict, vars_dict, BASES, motifs_names_dict, rna_len)
+    constraint_3_way(m, cpts_dict, vars_dict, BASES, motifs_names_dict, rna_len)
+
+    if max_cpts > 3:
+        constraint_4_way(m, cpts_dict, vars_dict, BASES, motifs_names_dict, rna_len)
 
     m.update()
     return m, [vars_dict, cpts_dict, motifs_names_dict, BASES]
@@ -666,7 +646,7 @@ def validate_max_bp_removal(max_bp_removal):
 
 def validate_max_components(max_components):
     max_components = int(max_components.strip())
-    if max_components < 1:
+    if max_components < 3:
         help(max_components=1)
         sys.exit(1)
     return max_components
@@ -711,6 +691,8 @@ def help(rna_seq='',
                 the max nb of Components in motifs 
             -m_sols (default 1)
                 maximal number of optimal solutions to output
+        e.g.
+            gurobi.sh RNAMoIP.py 'GGGCGGCCUUCGGGCUAGACGGUGGGAGAGGCUUCGGCUGGUCCACCCGUGACGCUC' '((((((((....))))..((((..(((..(((....)))..)))..))))...))))' 'No_Redondance_DESC' 0.3 4 > my_output.txt
     """
 
 if __name__ == '__main__':

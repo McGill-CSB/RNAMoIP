@@ -31,36 +31,31 @@ INSTALLATION:
 EXECUTION:
 
 	RNAMoIP.py is only a script that need to be launch with gurobi.sh.
-    RNAMoIP.py takes 5 arguments:
-                   i) The rna sequence
-                  ii) The rna secondary structure (without pseudoknots,
-                         only use the characters: '(', ')', '.'
-                 iii) The path to the motifs database ".desc" files.
-                         If you downloaded the one provides, it is the
-                         full path of the folder "No_Redondance_DESC"
-                  iv) The percentage  base pairs that can be removed.
-                         This must be a number between 0 and 1.
-			 We used "0.3".
-                   v) The max number of components in the motif inserted.
-                         The implementation has been done for '4'.
+    RNAMoIP.py arguments are as follows:
+      REQUIRED:
+        -s The rna Sequence 
+        -ss The rna Secondary Structure (no pseudoknots) 
+        -d the path to the .Desc files
+      OPTIONAL
+        -r (default 0.3) 
+           the percentage of basepairs that can be Removed 
+        -c (default 4, can be 3)
+            the max nb of Components in motifs 
+        -m_sols (default 1)
+            maximal number of optimal solutions to output
+    e.g.
+        gurobi.sh RNAMoIP.py 'GGGCGGCCUUCGGGCUAGACGGUGGGAGAGGCUUCGGCUGGUCCACCCGUGACGCUC' '((((((((....))))..((((..(((..(((....)))..)))..))))...))))' 'No_Redondance_DESC' 0.3 4 > my_output.txt
  
- EXAMPLE:
-         If you have the sequence / secondary structure:
-		GGGCGGCCUUCGGGCUAGACGGUGGGAGAGGCUUCGGCUGGUCCACCCGUGACGCUC
-		((((((((....))))..((((..(((..(((....)))..)))..))))...))))
-	And you wish to insert up to 4-way junction allowing at most 30% 
-	the base pairs to be removed. You need the complete path to your
-	motifs folder (if you downloaded the one we provide, it is:
-		"No_Redondance_DESC"
-	You should in a terminal do as follows:
-		gurobi.sh RNAMoIP.py 'GGGCGGCCUUCGGGCUAGACGGUGGGAGAGGCUUCGGCUGGUCCACCCGUGACGCUC' '((((((((....))))..((((..(((..(((....)))..)))..))))...))))' 'No_Redondance_DESC' 0.3 4 > my_output.txt
-
 	The file my_output.txt will contain all the usual output 
-	of Gurobi. The line starting with "Best objective" 
-	contains the value of the objective function.
-	At the end are the values of the inserted motifs 
+	of Gurobi. Followed by
+	The values of the inserted motifs 
 	and deleted base pairs:
+    And the last line contains the value of the objective 
+    function.
+   
+    Output exemple (omitting gurobi's) :
 
+      Optimal solution nb: 1
 		 C-1F7Y.B.6-31-38-1
 		 C-2KMJ.A.2-7-14-1
 		 C-1KUQ.B.5-26-30-1
@@ -74,6 +69,8 @@ EXECUTION:
 		 D-5-16
 		 D-32-37
 		 D-27-42
+      The optimal solutions has a value of:
+        -374.0
 
 	The rows starting with a "D" are the positions of the deleted
 	 base pairs.
