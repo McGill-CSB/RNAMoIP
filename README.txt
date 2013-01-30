@@ -35,7 +35,9 @@ EXECUTION:
     RNAMoIP.py arguments are as follows:
       REQUIRED:
         -s The rna Sequence 
-        -ss The rna Secondary Structure (no pseudoknots) 
+        -ss The rna Secondary Structure (no pseudoknots) OR
+            path to file with list of secondary structures. In that
+            case all optimal secondary stuctures will be outputed. 
         -d the path to the .Desc files
       OPTIONAL
         -r (default 0.3) 
@@ -45,7 +47,10 @@ EXECUTION:
         -m_sols (default 1)
             maximal number of optimal solutions to output
     e.g.
-        gurobi.sh RNAMoIP.py 'GGGCGGCCUUCGGGCUAGACGGUGGGAGAGGCUUCGGCUGGUCCACCCGUGACGCUC' '((((((((....))))..((((..(((..(((....)))..)))..))))...))))' 'No_Redondance_DESC' 0.3 4 > my_output.txt
+
+        gurobi.sh RNAMoIP.py -s 'GGGCGGCCUUCGGGCUAGACGGUGGGAGAGGCUUCGGCUGGUCCACCCGUGACGCUC' -ss '((((((((....))))..((((..(((..(((....)))..)))..))))...))))' -d 'No_Redondance_DESC' > my_output.txt
+
+        gurobi.sh RNAMoIP.py -s 'GGGCGGCCUUCGGGCUAGACGGUGGGAGAGGCUUCGGCUGGUCCACCCGUGACGCUC' -ss "/path/to/sec/struct/list.tt" -d 'No_Redondance_DESC' -r 0.4 -m_sols 5  > my_output.txt
  
 	The file my_output.txt will contain all the usual output 
 	of Gurobi. Followed by
@@ -56,28 +61,35 @@ EXECUTION:
    
     Output exemple (omitting gurobi's) :
 
-      Optimal solution nb: 1
-		 C-1F7Y.B.6-31-38-1
-		 C-2KMJ.A.2-7-14-1
-		 C-1KUQ.B.5-26-30-1
-		 C-2ZJR.X.176-23-25-1
-		 C-1FKA.A.44-4-6-1
-		 C-1KUQ.B.5-39-42-2
-		 C-2ZJR.X.176-44-46-2
-		 C-1FKA.A.44-15-19-2
-		 C-1FKA.A.44-50-54-3
-		 D-8-13
-		 D-5-16
-		 D-32-37
-		 D-27-42
-      The optimal solutions has a value of:
+################################################################################
+    Solution for the secondary structure:
+        ((((((((....))))..((((..(((..(((....)))..)))..))))...))))
+
+    Optimal solution nb:  1
+    Corrected secondary structure:
+        ((((.((......))...((((..((...((......))...))..))))...))))
+        C-413D.A.1-31-38-1
+        C-3E1A.1.35-7-14-1
+        C-1KUQ.B.5-26-30-1
+        C-2ZJR.X.176-23-25-1
+        C-1FKA.A.44-4-6-1
+        C-1KUQ.B.5-39-42-2
+        C-2ZJR.X.176-44-46-2
+        C-1FKA.A.44-15-19-2
+        C-1FKA.A.44-50-54-3
+        D-8-13
+        D-5-16
+        D-32-37
+        D-27-42
+
+    The optimal solutions has as value:
         -374.0
+################################################################################
+
 
 	The rows starting with a "D" are the positions of the deleted
 	 base pairs.
-	In this case [(8,13), (5,16), (32,37), (27,42)]. The resulting secondary
-	structure is thus:
-		((((.((......))...((((..((...((......))...))..))))...))))
+	In this case [(8,13), (5,16), (32,37), (27,42)].
 	The rows with a "C" are the components of the motifs inserted. They are 
 	composed of 4 values:
 			C-<1>-<2>-<3>-<4>
@@ -86,8 +98,8 @@ EXECUTION:
 		<3>: The last position where the component is inserted
 		<4>: The number of the component in the motifs (starting at 1)
 	Therefore in this case we have 5 motifs inserted as follow:
-		A) 	1F7Y.B.6 	[(31,38)]
-		B) 	2KMJ.A.2 	[(7,14)]
+		A) 	413D.A.1 	[(31,38)]
+		B) 	3E1A.1.35 	[(7,14)]
 		C) 	1KUQ.B.5 	[(26,30), (39,42)]
 		D) 	2ZJR.X.176 	[(23,25), (44,46)]
 		E) 	1FKA.A.44 	[(4,6,), (15, 19), (50,54)]
