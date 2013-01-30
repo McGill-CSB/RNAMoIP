@@ -13,16 +13,15 @@ DEPENDANCIES:
 		and enter in the Gurobi Interactive Shell
 
 INSTALLATION:
-	1) Download the RNAMoIP.py script
+    1) Download the RNAMoIP.py script
 
 	If you don't have a database of motifs in a ".desc" formatm, 
 	as outputed bu RNA3DMotifs (http://rna3dmotif.lri.fr/) we 
 	provided the one we used. Else jump to execution.
 
-    2) Download the motifs database from www.vreinharz.com/RNAMoIP/CATALOGUE.tgz
-    3) Extract the database i.e.
+    2) Extract the database i.e.
             tar -xzf CATALOGUE.tgz
-	4) The folder No_Redondance_DESC contains the description files,
+    3) The folder No_Redondance_DESC contains the description files,
 		as .desc, of the motifs used by RNAMoIP
 	   The fold No_Redondance_VIEW3D contains, for each description
 		file, all motifs .pdb having the same sequence as 
