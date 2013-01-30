@@ -1,6 +1,7 @@
-RNAMoIP 
+RNAMoIP 1.1 Development branch, might be buggy.
+
 	This software runs in command line and is written in python2.7
-	with the GUROBI4.6 python API.
+	with the GUROBI5.1 python API.
 
 DEPENDANCIES:
 	1) Python2.7 	
