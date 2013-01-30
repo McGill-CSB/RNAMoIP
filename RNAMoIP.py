@@ -701,7 +701,9 @@ def help(rna_seq='',
         ARGUMENTS 
           REQUIRED:
             -s The rna Sequence 
-            -ss The rna Secondary Structure (no pseudoknots) 
+            -ss The rna Secondary Structure (no pseudoknots) OR
+                path to file with list of secondary structures. In that
+                case all optimal secondary stuctures will be outputed. 
             -d the path to the .Desc files
           OPTIONAL
             -r (default 0.3) 
@@ -710,8 +712,11 @@ def help(rna_seq='',
                 the max nb of Components in motifs 
             -m_sols (default 1)
                 maximal number of optimal solutions to output
-        e.g.
-            gurobi.sh RNAMoIP.py 'GGGCGGCCUUCGGGCUAGACGGUGGGAGAGGCUUCGGCUGGUCCACCCGUGACGCUC' '((((((((....))))..((((..(((..(((....)))..)))..))))...))))' 'No_Redondance_DESC' 0.3 4 > my_output.txt
+    e.g.
+
+        gurobi.sh RNAMoIP.py -s 'GGGCGGCCUUCGGGCUAGACGGUGGGAGAGGCUUCGGCUGGUCCACCCGUGACGCUC' -ss '((((((((....))))..((((..(((..(((....)))..)))..))))...))))' -d 'No_Redondance_DESC' > my_output.txt
+
+        gurobi.sh RNAMoIP.py -s 'GGGCGGCCUUCGGGCUAGACGGUGGGAGAGGCUUCGGCUGGUCCACCCGUGACGCUC' -ss "/path/to/sec/struct/list.tt" -d 'No_Redondance_DESC' -r 0.4 -m_sols 5  > my_output.txt
     """
 
 if __name__ == '__main__':
