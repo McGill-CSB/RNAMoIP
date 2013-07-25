@@ -4,8 +4,7 @@ RNAMoIP 1.1
 	with the GUROBI5.1 python API.
 
 DEPENDANCIES:
-	1) Python2.7 	
-	2) Gurobi (implemented with Gurobi 4.6 free academic licence)
+	1) Gurobi (implemented with Gurobi 4.6 free academic licence)
 		http://gurobi.com/
 		To make sure that installation work, from a terminal,
 		you should be able to type:
