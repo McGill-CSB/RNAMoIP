@@ -1,4 +1,4 @@
-RNAMoIP 1.1 Development branch, might be buggy.
+RNAMoIP 1.1
 
 	This software runs in command line and is written in python2.7
 	with the GUROBI5.1 python API.
