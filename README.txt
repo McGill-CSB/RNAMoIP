@@ -46,9 +46,11 @@ EXECUTION:
             maximal number of optimal solutions to output
     e.g.
 
-        gurobi.sh RNAMoIP.py -s 'GGGCGGCCUUCGGGCUAGACGGUGGGAGAGGCUUCGGCUGGUCCACCCGUGACGCUC' -ss '((((((((....))))..((((..(((..(((....)))..)))..))))...))))' -d 'No_Redondance_DESC' > my_output.txt
+        gurobi.sh RNAMoIP.py -s 'GCCAGGGUGGCAGAGGGGCUUUGCGGCGGACUGCAGAUCCGCUUUACCCCGGUUCGAAUCCGGGCCCUGGC' -ss '(((((((..((((((...)))))).(((((.......))))).....(((((.......))))))))))))' -d 'No_Redondance_DESC' > my_output.txt
 
-        gurobi.sh RNAMoIP.py -s 'GGGCGGCCUUCGGGCUAGACGGUGGGAGAGGCUUCGGCUGGUCCACCCGUGACGCUC' -ss "/path/to/sec/struct/list.tt" -d 'No_Redondance_DESC' -r 0.4 -m_sols 5  > my_output.txt
+        NB: This is a suboptimal structure for the given sequence. It can be obtained with "RNAsubopt -e 3"
+
+        gurobi.sh RNAMoIP.py -s 'GCCAGGGUGGCAGAGGGGCUUUGCGGCGGACUGCAGAUCCGCUUUACCCCGGUUCGAAUCCGGGCCCUGGC' -ss "/path/to/sec/struct/list.tt" -d 'No_Redondance_DESC' -r 0.4 -m_sols 5  > my_output.txt
  
 	The file my_output.txt will contain all the usual output 
 	of Gurobi. Followed by
@@ -60,53 +62,25 @@ EXECUTION:
     Output exemple (omitting gurobi's) :
 
 ################################################################################
-    Solution for the secondary structure:
-        ((((((((....))))..((((..(((..(((....)))..)))..))))...))))
+Solution for the secondary structure:
+    (((((((..((((((...)))))).(((((.......))))).....(((((.......))))))))))))
 
-    Optimal solution nb:  1
-    Corrected secondary structure:
-        ((((.((......))...((((..((...((......))...))..))))...))))
-        C-413D.A.1-31-38-1
-        C-3E1A.1.35-7-14-1
-        C-1KUQ.B.5-26-30-1
-        C-2ZJR.X.176-23-25-1
-        C-1FKA.A.44-4-6-1
-        C-1KUQ.B.5-39-42-2
-        C-2ZJR.X.176-44-46-2
-        C-1FKA.A.44-15-19-2
-        C-1FKA.A.44-50-54-3
-        D-8-13
-        D-5-16
-        D-32-37
-        D-27-42
+Optimal solution nb:  1
+Corrected secondary structure:
+    ((((((...(((.........)))..((((.......))))......((((.........)))).))))))
+    C-2DU6.D.2-12-22-1
+    C-3CUL.D.6-51-61-1
+    C-2DU3.D.3-30-38-1
+    C-2DU5.D.1-6-10-1
+    C-2DU5.D.1-24-27-2
+    C-2DU5.D.1-41-48-3
+    C-2DU5.D.1-64-66-4
+    D-15-19
+    D-14-20
+    D-13-21
+    D-26-42
+    D-52-60
+    D-7-65
 
-    The optimal solutions has as value:
-        -374.0
-################################################################################
-
-
-	The rows starting with a "D" are the positions of the deleted
-	 base pairs.
-	In this case [(8,13), (5,16), (32,37), (27,42)].
-	The rows with a "C" are the components of the motifs inserted. They are 
-	composed of 4 values:
-			C-<1>-<2>-<3>-<4>
-		<1>: The name of the motifs
-		<2>: The first position where the component is inserted
-		<3>: The last position where the component is inserted
-		<4>: The number of the component in the motifs (starting at 1)
-	Therefore in this case we have 5 motifs inserted as follow:
-		A) 	413D.A.1 	[(31,38)]
-		B) 	3E1A.1.35 	[(7,14)]
-		C) 	1KUQ.B.5 	[(26,30), (39,42)]
-		D) 	2ZJR.X.176 	[(23,25), (44,46)]
-		E) 	1FKA.A.44 	[(4,6,), (15, 19), (50,54)]
-	Where the motifs 1FKA.A.44 has its first components on positions 4-6, 
-	its second on 15-19 and its third on 50-54.`
-	We can visualize the result as follow:
-		GGGCGGCCUUCGGGCUAGACGGUGGGAGAGGCUUCGGCUGGUCCACCCGUGACGCUC
-		((((.((......))...((((..((...((......))...))..))))...))))	
-		   EEEBBBBBBBBEEEEE   DDDCCCCCAAAAAAAACCCC DDD   EEEEE                      
-	Now, e.g. in the folder "No_Redondance_VIEW3D/1F7Y.B.6", all the
-	".pdb" files of the motifs having a sequence equal to the sequence
-	of 1F7Y.B.6 are deposited. You can use them directly with MC-Sym.
+The optimal solutions has as value:
+    -663.0
