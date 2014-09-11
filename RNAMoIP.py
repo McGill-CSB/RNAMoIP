@@ -542,7 +542,8 @@ def gurobi_create_model(motifs_dict, secStructPos, rna, max_bp_removal):
 
     constraint_interior_loops_arround_well_balanced(m, BASES, cpts_dict, vars_dict, motifs_names_dict, rna_len)
 
-    constraint_3_way(m, cpts_dict, vars_dict, BASES, motifs_names_dict, rna_len)
+    if max_cpts > 2:
+        constraint_3_way(m, cpts_dict, vars_dict, BASES, motifs_names_dict, rna_len)
 
     if max_cpts > 3:
         constraint_4_way(m, cpts_dict, vars_dict, BASES, motifs_names_dict, rna_len)
