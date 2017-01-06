@@ -12,7 +12,7 @@ DEPENDANCIES:
 		and enter in the Gurobi Interactive Shell
 
 INSTALLATION:
-    1) Download the RNAMoIP.py script
+    1) The RNAMoIP.py script is located in Src/RNAMoIP.py
 
 	If you don't have a database of motifs in a ".desc" formatm, 
 	as outputed bu RNA3DMotifs (http://rna3dmotif.lri.fr/) we 

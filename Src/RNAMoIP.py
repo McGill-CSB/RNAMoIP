@@ -44,6 +44,7 @@ from gurobipy import *
 import os
 import sys
 import re
+from collections import defaultdict
 
 NUMBER_THREADS = 0
 
@@ -269,11 +270,9 @@ def create_motifs_names_dict(motifs_dict):
     return motifs_name_dict
 
 def create_components_dict(motifs_dict, motifs_names_dict):
-    cpts_dict = {}
+    cpts_dict = defaultdict(lambda:[])
     for i in range(motifs_dict['max']):
-        cpts_dict['CPTS%d' % (i+1)] = []
         for j in range(i + 1):
-            cpts_dict['CPTS%dOf%d' % (j+1, i+1)] = []
             for mot in motifs_names_dict['MOTIFS%d' % (i+1)]:
                 cpts_dict['CPTS%dOf%d' % (j+1, i+1)].extend([(mot,k,l) for (k,l) in motifs_dict[str(i+1)][mot][j]])
             cpts_dict['CPTS%d' % (j+1)].extend(cpts_dict['CPTS%dOf%d' % (j+1, i+1)])
